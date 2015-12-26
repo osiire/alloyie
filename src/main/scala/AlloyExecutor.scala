@@ -15,6 +15,38 @@ import scala.annotation.tailrec
 class AlloyExecutor {
   import collection.JavaConversions._
 
+  /**
+   *
+   * @param model
+   * @param commandLabel
+   * @return
+   */
+  def iterator(model:String, commandLabel:Option[String]):Iterator[Example] = {
+    val (world, sol) = resolve(model, commandLabel)
+    new Iterator[Example]() {
+      var currentSol = sol
+      var first = true
+      override def hasNext: Boolean = {
+        if(first) {
+          true
+        } else {
+          val solNext = currentSol.next
+          solNext.ne(currentSol) && solNext.satisfiable()
+        }
+      }
+      override def next(): Example = {
+        if(first) {
+          first = false;
+        } else {
+          currentSol = currentSol.next
+        }
+        val x = convertSol2Example(world, currentSol).resolveName
+        println("--INSTANCE--")
+        println(x.toString)
+        x
+      }
+    }
+  }
 
   /**
    * returns all instances of the specified model.
@@ -22,8 +54,11 @@ class AlloyExecutor {
    * @param commandLabel
    * @return
    */
-  def run(model:String, commandLabel:Option[String]):Set[Example] = {
+  def all(model:String, commandLabel:Option[String]):Set[Example] = {
+    iterator(model, commandLabel).toSet[Example]
+  }
 
+  private def resolve(model:String, commandLabel:Option[String]):(CompModule, A4Solution) = {
     val reporter:A4Reporter  = new A4Reporter()
     val world:CompModule = CompUtil.parseEverything_fromString(reporter, model)
     val commands:ConstList[Command]  = world.getAllCommands()
@@ -38,27 +73,7 @@ class AlloyExecutor {
     opt.solver = A4Options.SatSolver.SAT4J
 
     // solve
-    val sol:A4Solution = TranslateAlloyToKodkod.execute_command(reporter, world.getAllSigs(), cmd, opt)
-
-    @tailrec
-    def loop(instances:Set[Example], sol:A4Solution) : Set[Example] = {
-      if(sol.satisfiable()) {
-        println(sol.toString)
-        val example = convertSol2Example(world, sol).resolveName
-        println(example.toString)
-        val instancesNext = instances + example
-        val solNext = sol.next
-        if(solNext.eq(sol)) { // pointer equality.
-          instancesNext // stop loop.
-        } else {
-          loop(instancesNext, solNext)
-        }
-      } else {
-        instances
-      }
-    }
-    // correct all solutions as set of Example.
-    loop(Set.empty, sol)
+    (world, TranslateAlloyToKodkod.execute_command(reporter, world.getAllSigs(), cmd, opt))
   }
 
   private def convertSol2Example(world:CompModule, sol:A4Solution):Example = {

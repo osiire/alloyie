@@ -26,4 +26,4 @@ fact replyNotCyclic { no t:Tweet | t in t.^replyTo }
 
 run {
   
-} for 2
+}  for 2 but 1 Int

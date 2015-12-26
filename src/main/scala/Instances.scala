@@ -11,6 +11,11 @@ case class InstancePointer(instance:SignatureInstance) extends Pointer {
     "i(%s)".format(instance.instanceName)
   }
 }
+case class IntegerPointer(num:Integer) extends Pointer {
+  override def toString: String = {
+    "i(%d)".format(num)
+  }
+}
 
 case class Field (name:String, values:Set[List[Pointer]])
 {
@@ -47,7 +52,11 @@ case class Example (signatures:Set[SignatureInstance]) {
                    signatures.find(sig => sig.instanceName == name).map {
                      InstancePointer(_)
                    }.getOrElse({
-                     throw new UnknownInstanceName(name)
+                     try {
+                       IntegerPointer(Integer.parseInt(name))
+                     } catch {
+                       case _:Exception => throw new UnknownInstanceName(name)
+                     }
                    })
                  case _ =>
                    p

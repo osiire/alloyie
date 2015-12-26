@@ -64,15 +64,15 @@ class AlloyExecutor {
   private def convertSol2Example(world:CompModule, sol:A4Solution):Example = {
     Example(world.getAllReachableUserDefinedSigs.map { sig: Sig =>
       val typeName = sig.toString
-      sol.eval(sig).map { i : A4Tuple =>
-        val instanceName : String = i.atom(0)
+      sol.eval(sig).map { i: A4Tuple =>
+        val instanceName: String = i.atom(0)
         val fields = sig.getFields.map { field: Sig.Field =>
           val fieldName = field.label
-          val values : Set[List[Pointer]] =
+          val values: Set[List[Pointer]] =
             sol.eval(field).filter { t: A4Tuple =>
               t.atom(0) == instanceName
             }.map { t: A4Tuple =>
-              (for (i <- 1 until t.arity()) yield ( StringPointer(t.atom(i)) )).toList
+              (for (i <- 1 until t.arity()) yield (StringPointer(t.atom(i)))).toList
             }.toSet
           Field(fieldName, values)
         }.toSet

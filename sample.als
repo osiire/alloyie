@@ -1,3 +1,7 @@
+open util/ordering[Time]
+
+sig Time{}
+
 sig User {
   follows:set User,
   blocks:set User,
@@ -10,7 +14,9 @@ sig User {
 sig Tweet {
   from: User,
   replyTo: lone Tweet,
-  favorite: set User
+  favorite: set User,
+  created:Time,
+  number:Int
 } {
   no replyTo & this
   no favorite & from

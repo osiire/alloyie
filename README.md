@@ -1,2 +1,0 @@
-# alloyie
-alloy instance extractor

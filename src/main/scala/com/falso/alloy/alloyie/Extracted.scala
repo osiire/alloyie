@@ -1,4 +1,4 @@
-package com.falso.alloy
+package com.falso.alloy.alloyie
 
 sealed trait Pointer
 case class StringPointer(name:String ) extends Pointer {
@@ -17,10 +17,19 @@ case class IntegerPointer(num:Integer) extends Pointer {
   }
 }
 
-case class Field (name:String, values:Set[List[Pointer]])
+sealed abstract class Mult(val name:String)
+object Mult {
+  case object One extends Mult("one")
+  case object Lone extends Mult("lone")
+  case object Some extends Mult("some")
+  case object Set extends Mult("set")
+}
+
+
+case class Field (name:String, mult:Mult, values:Set[List[Pointer]])
 {
   override def toString : String = {
-    "[%s,%s]".format(name, values.map(_.toString).mkString)
+    "[%s,%s,%s]".format(name, mult.name, values.map(_.toString).mkString)
   }
 }
 
@@ -35,21 +44,34 @@ case class SignatureInstance(
   }
 }
 
+case class Signature (
+   typeName:String
+   ,fields:Set[Field]
+)
+{
+  override def toString: String = {
+    "type=%s,fields=%s".format(typeName, fields.map(_.toString).mkString)
+  }
+}
+
 class UnknownInstanceName(name:String)
   extends RuntimeException("could not resolve instance name (%s).".format(name))
 
 /**
  *
  */
-case class Example (signatures:Set[SignatureInstance]) {
-   def resolveName : Example = {
-      Example(signatures.map { sig : SignatureInstance =>
+case class Instance (
+  instances:Set[SignatureInstance]
+)
+{
+   def resolveName : Instance = {
+      Instance(instances.map { sig : SignatureInstance =>
         sig.copy( fields = sig.fields.map { f : Field =>
            f.copy( values = f.values.map { vv : List[Pointer] =>
              vv.map { p : Pointer =>
                p match {
                  case StringPointer(name) =>
-                   signatures.find(sig => sig.instanceName == name).map {
+                   instances.find(sig => sig.instanceName == name).map {
                      InstancePointer(_)
                    }.getOrElse({
                      try {
@@ -68,8 +90,7 @@ case class Example (signatures:Set[SignatureInstance]) {
    }
 
   override def toString : String = {
-    signatures.map(_.toString).mkString("\n")
+    instances.map(_.toString).mkString("\n")
   }
 
 }
-

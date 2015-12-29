@@ -13,8 +13,11 @@ object Main {
     val param = AlloyInstanceExtractor.Parameter(Source.fromFile("sample.als").mkString, Option.empty)
     val extractor = new AlloyInstanceExtractor(param)
     val signatures = extractor.signatures
-    val instances = extractor.allInstances
-    val java = new JavaPrityPrinter(new JavaPrityPrinter.Config("java_tweet.conf", "tweet.java"))
+    val instances = extractor.instanceIterator
+    for(i <- instances) {
+      println(i.toString)
+    }
+    val java = new JavaPrityPrinter(new JavaPrityPrinter.Config("com.example", "tweet.java"))
     println(java.show(signatures, instances))
   }
 

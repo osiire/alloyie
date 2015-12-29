@@ -2,6 +2,7 @@ package com.falso.alloy.alloyie
 
 import com.falso.alloy.alloyie.AlloyInstanceExtractor.Parameter
 import edu.mit.csail.sdg.alloy4.{ConstList, ErrorAPI, A4Reporter}
+import edu.mit.csail.sdg.alloy4compiler.ast.Type.ProductType
 import edu.mit.csail.sdg.alloy4compiler.ast.{ExprUnary, Sig, Command}
 import edu.mit.csail.sdg.alloy4compiler.parser.{CompModule, CompUtil}
 import edu.mit.csail.sdg.alloy4compiler.translator._
@@ -30,7 +31,13 @@ class AlloyInstanceExtractor(param: Parameter) {
   def signatures:Set[Signature] = {
     world.getAllSigs.map { sig:Sig =>
       val fields:Set[Field] = sig.getFields.map { field:Sig.Field =>
-        Field(field.label, op2mul(field.decl().expr.mult()), Set.empty)
+        Field(field.label,
+              op2mul(field.decl().expr.mult()),
+              for {
+                pt: ProductType <- field.`type`().toList
+                types <- List.range(1, pt.arity).map(pt.get(_).label) // ignore 0. it's myself.
+              } yield(types)
+        )
       }.toSet
       Signature(sig.label, fields)
     }.toSet
@@ -109,9 +116,9 @@ class AlloyInstanceExtractor(param: Parameter) {
               t.atom(0) == instanceName // field tuple's first element must be signature instance.
             }.map { t: A4Tuple =>
               // there are multiple elements in the a4tuples if relation arity is up to 3.
-              (for (i <- 1 until t.arity()) yield (StringPointer(t.atom(i)))).toList
+              (for (i <- 1 until t.arity()) yield (StringPointer(t.sig(i).label, t.atom(i)))).toList
             }.toSet
-          Field(fieldName, op2mul(mult), values)
+          FieldInstance(fieldName, op2mul(mult), values)
         }.toSet
         SignatureInstance(typeName, instanceName, fields)
       }.toSet
